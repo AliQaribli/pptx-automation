@@ -6,7 +6,7 @@ Turn one short Telegram message into a beautiful, editable presentation — deli
 
 > **Status:** end-to-end pipeline verified on 2026-11-24 — a Telegram topic becomes a QA-PASS editable `.pptx` and is delivered back as a file. Earlier decks were Canva-generated; Canva credit is now exhausted, so the deck bot uses the deterministic local PPTX engine. See [competition report](docs/competition_report.md) and [limitations](docs/limitations.md).
 
-**Repository:** https://github.com/AliQaribli/pptx-automation.git — pushed on 2026-11-24, branch `main` at `7466a7c`.
+**Repository:** https://github.com/AliQaribli/pptx-automation.git — pushed on 2026-11-24, branch `main`. Latest commit is recorded in `docs/competition_report.md`.
 
 ## What it does
 
@@ -116,6 +116,7 @@ The agent is **free by default** and **opt-in for paid tiers**. The three tiers 
 - [Limitations](docs/limitations.md) — honest constraints and workarounds.
 - [Competition report](docs/competition_report.md) — criterion-by-criterion readiness, Canva proof, model switching.
 - [Repo blueprint](docs/repo_blueprint.md) — structure, full demo script, safety checklist.
+- [PptxGenJS pipeline](pptxgen/README.md) — brief-compliant build → render → inspect → correct workflow using PptxGenJS and PowerPoint COM rendering.
 
 ## License
 

@@ -69,7 +69,7 @@ Performance notes:
 
 ## Remaining gaps / risks
 
-1. **GitHub push — DONE** — repository is live at `https://github.com/AliQaribli/pptx-automation.git`, branch `main` at commit `7466a7c`. No token was pasted in chat.
+1. **GitHub push — DONE** — repository is live at `https://github.com/AliQaribli/pptx-automation.git`, branch `main`. No token was pasted in chat. The latest commit is the one currently at `origin/main`.
 2. **Exact rubric** — share the competition text if you want a line-by-line score prediction.
 3. **Canva account visibility** — earlier designs live in the connector account, not necessarily the one in your browser.
 4. **Canva credit exhausted** — the current deck bot uses the local PPTX engine; live Canva design will resume only after quota resets or a paid plan is connected.
