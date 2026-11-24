@@ -52,6 +52,10 @@ def _call(token: str, method: str, *, post: bool, payload: dict, files: dict | N
             kwargs["headers"] = {"Host": "api.telegram.org"}
             kwargs["verify"] = False
         if files:
+            for value in files.values():
+                handle = value[1] if isinstance(value, tuple) else value
+                if hasattr(handle, "seek"):
+                    handle.seek(0)
             kwargs.update({"data": payload, "files": files})
         elif post:
             kwargs["json"] = payload
@@ -60,8 +64,9 @@ def _call(token: str, method: str, *, post: bool, payload: dict, files: dict | N
         try:
             response = requests.post(url, **kwargs) if post or files else requests.get(url, **kwargs)
             data = response.json()
-            if data.get("ok") or data.get("error_code", 0) >= 400:
+            if data.get("ok"):
                 return data
+            log(f"telegram {method} error: {data.get('error_code')} {str(data.get('description'))[:120]}")
             return data
         except Exception as exc:
             last_error = exc
