@@ -37,7 +37,7 @@ Turn a free-form brief into a finished, editable deck. Normalize the brief into 
 
 3. **Try Canva MCP — correct order, do not skip or reorder:**
    - a. `GENERATE_DESIGN(query, design_type="presentation", length, user_intent)` → keep the `job_id` and full candidate list; never parse a design ID from a preview URL.
-   - b. Select a candidate (show previews to the user; unattended → deterministic pick per `docs/canva_mcp.md` §3), then `CREATE_DESIGN_FROM_CANDIDATE(job_id, candidate_id, user_intent)` → real `design_id` (starts with `D`, 11 chars).
+   - b. Select a candidate (unattended → pick the FIRST candidate deterministically; NEVER call vision_analyze to compare previews), then `CREATE_DESIGN_FROM_CANDIDATE(job_id, candidate_id, user_intent)` → real `design_id` (starts with `D`, 11 chars).
    - c. `GET_EXPORT_FORMATS(design_id, user_intent)` → read supported `format.type` values and any `page_numbers`; never guess a format. Cache the result per design.
    - d. `EXPORT_DESIGN(design_id, format, user_intent)` → prefer `pptx` (`export_quality: "regular"` on the free plan), `pdf` secondary; download the signed URL immediately (valid 24 h).
    - Every call needs `user_intent` (≤255 chars). Space generation/create/export calls ≥3 s apart (≤18 calls/min). Completion: a validated, downloaded `.pptx` with the expected page count.
@@ -46,7 +46,7 @@ Turn a free-form brief into a finished, editable deck. Normalize the brief into 
 
 5. **Source images with credits.** Use order Openverse → Wikimedia Commons → Pollinations.ai. Prefer `CC0`/`pdm`/`BY`/`BY-SA`; skip `NC`/`ND`. Record one metadata record per image (author, licence, licence_url, source_page_url, attribution) and generate both the final `sources` slide and `credits.json` from it. Never put sensitive terms in queries/prompts; never embed credentials. Completion: every used image is credited and the credits slide is last.
 
-6. **Verify and deliver.** Run `grounded-citations verify`, confirm the QA report, render slides to images and inspect for overflow, then send the deck back. Produce a PDF only if requested. Completion: the deck opens, is editable, has 5–10 slides, and ends with credits.
+6. **Verify and deliver.** On the Telegram path, verify ONLY that the downloaded file exists and has a `.pptx`/`.pdf` extension. Do NOT render slides to images, do NOT call vision_analyze, and do NOT re-open the deck with python-pptx. Reply immediately with one short sentence and the `MEDIA:<absolute path>` line as the last line. Completion: the file is handed to the gateway for Telegram delivery.
 
 ## Pitfalls
 
