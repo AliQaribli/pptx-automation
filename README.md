@@ -4,7 +4,7 @@ Turn one short Telegram message into a beautiful, editable presentation — deli
 
 `Beautiful Deck Agent` is a Hermes agent that reads a plain-text brief, plans the slides, builds the deck through **Canva MCP** (or a deterministic, offline **local PPTX engine** when Canva is unavailable), and sends the finished file to the requester. It is built for a phone-first workflow: send a brief from Telegram, get an editable deck back, no laptop required.
 
-> **Status:** the local PPTX engine and the Telegram bridge are verified — a Telegram `ping` produced a reply on 2026-11-24. Canva MCP delivery is documented but not live-tested here — see [limitations](docs/limitations.md).
+> **Status:** end-to-end pipeline verified on 2026-11-24 — a Telegram topic was turned into a Canva-generated 5-slide deck and delivered back as a `.pptx` file. Local PPTX engine and Telegram bridge also pass offline tests. See [competition report](docs/competition_report.md) and [limitations](docs/limitations.md).
 
 ## What it does
 
@@ -112,6 +112,7 @@ The agent is **free by default** and **opt-in for paid tiers**. The three tiers 
 - [Image sourcing](docs/image_sourcing.md) — free-first imagery and credits.
 - [Model switching](docs/model_switching.md) — `/model` from Telegram and alias setup.
 - [Limitations](docs/limitations.md) — honest constraints and workarounds.
+- [Competition report](docs/competition_report.md) — criterion-by-criterion readiness, Canva proof, model switching.
 - [Repo blueprint](docs/repo_blueprint.md) — structure, full demo script, safety checklist.
 
 ## License
