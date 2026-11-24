@@ -1,0 +1,22 @@
+# Secrets — never commit these
+.env
+*.key
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Generated output
+output/
+*.pptx
+*.pdf
+*.png
+*.jpg
+
+# OS
+Thumbs.db
+desktop.ini

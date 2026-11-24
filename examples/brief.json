@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "meta": {
+    "title": "Q3 2026 business review",
+    "subtitle": "Growth, retention, and what changed",
+    "language": "en",
+    "theme": {
+      "color_primary": "#1F6FEB",
+      "color_secondary": "#F2A900",
+      "neutral_dark": "#12141A",
+      "white": "#FFFFFF",
+      "font_heading": "Aptos Display",
+      "font_body": "Aptos"
+    }
+  },
+  "slides": [
+    {
+      "kind": "title",
+      "title": "Growth accelerated in Q3 as retention hit a record high",
+      "kicker": "Q3 2026 business review",
+      "body": ["Revenue, retention, and the three shifts behind them."],
+      "notes": "Open with the headline number, then name the three shifts.",
+      "image": {
+        "path": "assets/hero-team.png",
+        "credit": "Original illustration",
+        "caption": "The team behind the Q3 push",
+        "layout": "right"
+      }
+    },
+    {
+      "kind": "bullets",
+      "title": "Three shifts turned retention into the main growth engine",
+      "body": [
+        "Onboarding cut time to value by 40 percent",
+        "Referral programme doubled organic reach",
+        "Renewals moved in-house and stopped leaking"
+      ],
+      "notes": "One lever per line; do not read the bullets verbatim."
+    },
+    {
+      "kind": "metrics",
+      "title": "Revenue grew 34 percent while operating costs held flat",
+      "body": ["Growth came from retention, not spend."],
+      "metrics": [
+        { "value": "34%", "label": "Revenue growth" },
+        { "value": "+1.2M", "label": "New users" },
+        { "value": "0.9x", "label": "Cost ratio" }
+      ]
+    },
+    {
+      "kind": "two_column",
+      "title": "The wins are real, but two leaks remain",
+      "columns": [
+        {
+          "heading": "Worked",
+          "body": [
+            "Onboarding lift held at 18 percent",
+            "Referrals doubled reach"
+          ]
+        },
+        {
+          "heading": "Fix next",
+          "body": [
+            "Late renewals cost four points",
+            "Support backlog doubled in June"
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "image_hero",
+      "title": "Usage concentrated in three markets, one of them new",
+      "body": ["Two established markets held; the third doubled."],
+      "caption": "Share of sessions by market",
+      "image": {
+        "path": "assets/markets-map.png",
+        "credit": "Internal analytics export, original chart",
+        "caption": "Share of sessions by market",
+        "layout": "full"
+      }
+    },
+    {
+      "kind": "closing",
+      "title": "Double down on retention with one owner and one date",
+      "body": ["Decision by Friday. Owner: Growth. Review in 30 days."],
+      "image": {
+        "path": "assets/q4-roadmap.png",
+        "credit": "Original roadmap sketch",
+        "caption": "Q4 focus",
+        "layout": "right"
+      }
+    },
+    {
+      "kind": "sources",
+      "title": "Sources & credits",
+      "sources": [
+        { "label": "Q3 analytics export", "url": "" },
+        { "label": "Northwind market size 2026", "url": "https://example.org/northwind-2026" },
+        { "label": "Internal retention study", "url": "" }
+      ]
+    }
+  ]
+}
