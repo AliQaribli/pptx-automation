@@ -13,26 +13,23 @@ Do not answer the question, do not chat, do not ask follow-ups, do not explain, 
 ## Exact motion (no questions, no confirmation)
 
 1. If the `beautiful-deck` skill is available, load it before acting.
-2. Try Canva MCP first, in this order. Do not skip steps and do not guess IDs:
-   - `connectors__canva_mcp__GENERATE_DESIGN`
-   - `connectors__canva_mcp__CREATE_DESIGN_FROM_CANDIDATE`
-   - `connectors__canva_mcp__GET_EXPORT_FORMATS`
-   - `connectors__canva_mcp__EXPORT_DESIGN`
-   Download the export to `C:\Users\Ali\presentation-agent\output\telegram\`
-   as a `.pptx` or `.pdf`. Use only free-plan assets and standard quality.
-3. If ANY Canva step fails or a tool is missing — including a credit-quota or
-   502 error — fall back immediately — do not ask the user, do not explain the
-   failure, and do not hand-write a brief or call `presentation.cli` yourself.
+2. Build the deck with PptxGenJS, not Canva and not a model call:
+   - `python C:\Users\Ali\presentation-agent\scripts\topic_to_plan.py "<the user's topic>"`
+   - It prints `PLAN:<absolute path>`.
+   - `node C:\Users\Ali\presentation-agent\pptxgen\scripts\build_deck.js "<plan path>" "<output pptx path>"`
+   - It prints `PPTX:<absolute path>`.
+   The plan is deterministic and adds no external facts. If either step fails,
+   fall back immediately to:
    `python C:\Users\Ali\presentation-agent\scripts\deck_from_text.py "<the user's topic>"`
-   It prints one line: `DECK:<absolute path>`.
-4. Deliver the file immediately by running:
+   It prints `DECK:<absolute path>`.
+3. Deliver the file immediately by running:
    `python C:\Users\Ali\presentation-agent\scripts\send_to_telegram.py --caption "Your deck is ready." "<absolute deck path>"`
    It prints `SENT:<path>`. This is the primary delivery path and works
    regardless of model behaviour. Only if that script fails, put
    `MEDIA:<absolute path>` as the VERY LAST line as a backup.
    Once the file exists on disk, stop calling tools and deliver — do not spend
    turns re-verifying it.
-5. Keep the whole reply under 200 characters. Do not include bullet lists,
+4. Keep the whole reply under 200 characters. Do not include bullet lists,
    caveats, credential talk, chat IDs, emails, or questions.
 
 ## Safety

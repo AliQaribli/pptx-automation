@@ -30,6 +30,16 @@ python pptxgen/scripts/run_pipeline.py pptxgen/plans/renewable_energy.json pptxg
 
 Then inspect `contact_sheet.png` with a vision-capable model, fix the affected slide(s) in the plan or in `build_deck.js`, and rerun. Limit corrections to 2–3 rounds.
 
+## Telegram wiring
+
+`scripts/deck_bot.py` now builds every Telegram deck through this pipeline:
+
+1. `python scripts/topic_to_plan.py "<topic>"` → `PLAN:<path>`
+2. `node pptxgen/scripts/build_deck.js <plan> <deck.pptx>` → `PPTX:<path>`
+3. Existing Telegram `sendDocument` delivery.
+
+`topic_to_plan.py` is deterministic and offline: it adds no external facts and no model call. The older `deck_from_text.py` remains only as a safety fallback if either step fails. Canva is not called anywhere in this path.
+
 ## Renderer note
 
 The brief asks for LibreOffice. LibreOffice is **not installed** on this PC (verified). Microsoft PowerPoint **is** installed, and `render_deck.ps1` uses its COM automation to export PNGs. This is the verified local substitute. No new global tool was installed.

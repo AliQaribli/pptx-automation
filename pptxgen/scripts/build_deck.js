@@ -154,8 +154,14 @@ L.sources = (s, d) => {
     text: `[${src.id}] ${src.title}\n${src.url}`,
     options: { bullet: { type: 'bullet' }, breakLine: i < plan.sources.length - 1, fontSize: 13, color: p.ink, paraSpaceAfterPt: 12, fontFace: FONT }
   }));
-  s.addText(rows, { x: M, y: 2.1, w: CW, h: 3.6, valign: 'top', fit: 'shrink' });
-  s.addText('Figures are from the cited sources. All other statements are the author\u2019s synthesis.', { x: M, y: 6.15, w: CW, h: 0.4, fontSize: 10, italic: true, color: p.muted, fontFace: FONT });
+  if (rows.length) {
+    s.addText(rows, { x: M, y: 2.1, w: CW, h: 3.6, valign: 'top', fit: 'shrink' });
+  } else {
+    s.addText('No external facts were added to this deck. It is a topic-only starter generated from your prompt.', {
+      x: M, y: 2.2, w: CW, h: 1.2, fontSize: 18, color: p.ink, fontFace: FONT, fit: 'shrink'
+    });
+  }
+  s.addText('Editable PowerPoint elements: text, shapes, process diagram and layouts.', { x: M, y: 6.15, w: CW, h: 0.4, fontSize: 10, italic: true, color: p.muted, fontFace: FONT });
 };
 
 plan.slides.forEach((d, i) => {

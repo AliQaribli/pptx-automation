@@ -7,49 +7,43 @@ How a brief in Telegram becomes an editable deck delivered back into the same ch
 ```mermaid
 flowchart LR
     U["Operator (you)<br/>phone or desktop"]
-    T["Telegram Bot<br/>receives brief, sends file"]
-    G["Hermes Messaging Gateway<br/>allowlist + message routing"]
-    S["Deck skill<br/>beautiful-deck: parse brief, plan slides, emit contract JSON"]
-    C{"Canva MCP<br/>available & safe?"}
-    M["Tool 1: Canva MCP<br/>generate → materialize → export"]
-    P["Tool 2: Local PPTX fallback<br/>python-pptx, offline & deterministic"]
-    F["Deck file<br/>+ sources/credits slide"]
-    D["File delivery<br/>back into the chat"]
+    B["Dedicated deck bot<br/>@presentation_pptxbot<br/>topics only"]
+    P["topic_to_plan.py<br/>deterministic JSON plan"]
+    R["PptxGenJS renderer<br/>build_deck.js"]
+    Q["PowerPoint COM visual QA<br/>render_deck.ps1"]
+    F["Editable PPTX<br/>native text, shapes, charts"]
+    D["Telegram sendDocument<br/>direct multipart upload"]
 
-    U -->|"1. short brief"| T
-    T -->|"2. message"| G
-    G -->|"3. brief + allowlist rules"| S
-    S -->|"4. contract JSON"| C
-    C -->|"yes"| M
-    C -->|"no / license_required / rate-limited"| P
-    M --> F
-    P --> F
-    F --> D
-    D -->|"5. editable deck"| U
-
-    classDef local fill:#fff4e5,stroke:#d9822b,color:#5a3a00;
-    classDef remote fill:#e7f0ff,stroke:#1f6feb,color:#0b2a5a;
-    class G,S,P,F,D local;
-    class T,C,M remote;
+    U -->|"1. topic"| B
+    B -->|"2. topic string"| P
+    P -->|"3. plan.json"| R
+    R -->|"4. deck.pptx"| F
+    F -->|"5. visual QA"| Q
+    Q -->|"6. approved file"| D
+    D -->|"7. editable deck"| U
 ```
 
-In one sentence: a brief goes from Telegram through the Hermes gateway to the deck skill, which emits a contract JSON and tries Canva MCP first; if Canva is unavailable, licensing-blocked, or rate-limited it falls back to the offline local PPTX engine, then the finished file — with a sources/credits slide — is handed back to the same chat.
+In one sentence: a topic goes to the dedicated deck-only Telegram bot, which deterministically converts it into a structured slide plan, renders the plan locally with PptxGenJS into editable PowerPoint elements, visually checks the rendered slides, and sends the finished `.pptx` back into the same chat. Canva is not in this path.
 
 ## Components
 
 | Component | Role | Runs where | Notes |
 |-----------|------|-----------|-------|
-| **Operator** | Sends the brief and opens the delivered file. | Phone or desktop | Use a generic brief; no personal data on screen. |
-| **Telegram Bot** | Receives the brief; later sends the finished document back. | Telegram cloud | Private, allowlist-only. API reachability from this PC is currently a limitation. |
-| **Hermes Messaging Gateway** | Authenticates/authorizes the user (allowlist), routes the message to the agent, and handles outbound file delivery. | Hermes runtime | Slash commands such as `/model` are handled here; credentials stay in Hermes config, never in repo code. |
-| **Deck skill (`beautiful-deck`)** | Turns the brief into a slide plan and a strict contract JSON; enforces the design contract. | Hermes agent | The agent emits data only — it never writes rendering code. See [design contract](design_contract.md). |
-| **Canva MCP connector (Tool 1)** | Generates design candidates, materializes a design, and exports an editable PPTX. | Remote (Canva MCP) | Free-plan constraints and rate limits apply; falls back on `license_required`. See [Canva MCP](canva_mcp.md). |
-| **Local PPTX fallback (Tool 2)** | Renders the contract JSON into an editable 16:9 PPTX with a credits slide. | Local (`python-pptx`) | Offline, deterministic, no account or secrets. See [PPTX fallback](pptx_fallback.md). |
-| **Deck file + credits** | The deliverable: editable `.pptx`; optional locally produced PDF on request. | Local / transferred | Final slide always lists sources/credits. See [image sourcing](image_sourcing.md). |
-| **File delivery** | Sends the deck back into the originating Telegram chat as a document. | Hermes gateway → Telegram | Subject to the 50 MB Telegram file cap. |
+| **Operator** | Sends a topic and opens the delivered file. | Phone or desktop | Generic topics only; no personal data. |
+| **Dedicated deck bot** | `@presentation_pptxbot`; accepts only topics, rejects everything else with one fixed line. | Hermes `deckbot` profile + Telegram polling | Separate from the operator chat so model/tool drift cannot break delivery. |
+| **Topic planner** | `scripts/topic_to_plan.py` — turns any topic into a structured JSON plan. | Local Python | Deterministic, offline, no model/network, no invented facts. |
+| **PptxGenJS renderer** | `pptxgen/scripts/build_deck.js` — turns the plan into an editable 16:9 PPTX. | Local Node | Native text, shapes and charts. Not a screenshot. |
+| **Visual QA** | `pptxgen/scripts/render_deck.ps1` — exports every slide to PNG for inspection. | Local PowerPoint COM | LibreOffice is not installed; this is the verified substitute. |
+| **Telegram sender** | Direct multipart `sendDocument`, with a known-IP fallback that rewinds the file handle. | Local Python | Keeps credentials out of the repo. |
+| **Legacy fallback** | `scripts/deck_from_text.py` — older deterministic `python-pptx` builder. | Local Python | Used only if the PptxGenJS step fails. |
+| **Deck skill** | `skills/beautiful-deck/SKILL.md` — design rules for operator-side research decks. | Hermes operator/deckbot profiles | See [design contract](design_contract.md). |
 
 ## Decision points
 
-- **Tool selection:** Canva MCP is preferred for bespoke design; the local engine is the guaranteed path when Canva cannot be used. Both paths produce the same deliverable shape, so the chat experience is identical.
-- **Model selection:** the driving LLM is chosen independently of the pipeline, from Telegram via `/model` tier aliases. This does not change the deck engine — see [model switching](model_switching.md).
-- **Failure policy:** every path must deliver a working file. Transient, idempotent failures are retried; licensing/format failures trigger a redesign or the local fallback; the Telegram turn never fails silently.
+- **Tool selection:** PptxGenJS is the primary and only generation path for the Telegram bot. Canva MCP is not called; the older python-pptx engine is a safety fallback only.
+- **Model selection:** the driving LLM is chosen independently in the operator chat via `/model` tier aliases. The deck bot makes no model call — see [model switching](model_switching.md).
+- **Failure policy:** every path must deliver a working file. If planning or rendering fails, the bot falls back to the legacy builder; delivery is retried once with rewound file handles; the Telegram turn never fails silently.
+
+## Why Canva was removed
+
+Canva MCP was exercised earlier in the project, but both known accounts became unusable for generation (one out of credit, one with design generation disabled at team level). Requiring Canva put a paid/third-party account on the critical path and conflicted with the project brief. The local PptxGenJS path is free, editable, deterministic and fully under our control.

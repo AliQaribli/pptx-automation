@@ -8,6 +8,7 @@ The token is read from C:\\Users\\Ali\\.deckbot\\token.txt and is never printed.
 """
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 import time
@@ -24,7 +25,7 @@ TOKEN_FILE = Path(r"C:\Users\Ali\.deckbot\token.txt")
 API = "https://api.telegram.org"
 FALLBACK_IP = "149.154.167.99"
 REJECT = "Deck bot only — send a topic."
-START = "Send a topic and I will make a 5-slide deck and send it back."
+START = "Send a topic and I will make a 7-slide deck and send it back."
 GREETINGS = {"hi", "hey", "hello", "ping", "test", "how are you", "how r u"}
 
 
@@ -108,23 +109,64 @@ def newest_deck() -> Path | None:
     return max(candidates, key=lambda p: p.stat().st_mtime)
 
 
+def _labelled_path(output: str, label: str) -> Path | None:
+    line = next((line for line in output.splitlines() if line.startswith(label)), "")
+    return Path(line[len(label):].strip()) if line else None
+
+
+def _build_pptxgen(topic: str) -> Path | None:
+    """Build with the PptxGenJS pipeline. Returns the deck path, or None."""
+    plan_result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "topic_to_plan.py"), topic],
+        cwd=str(ROOT), capture_output=True, text=True,
+        encoding="utf-8", errors="ignore", timeout=60,
+    )
+    plan = _labelled_path((plan_result.stdout or "") + "\n" + (plan_result.stderr or ""), "PLAN:")
+    if plan is None or not plan.is_file():
+        log(f"pptxgen plan failed rc={plan_result.returncode}")
+        return None
+
+    digest = plan.stem.rsplit("-", 1)[-1]
+    slug = re.sub(r"[^a-z0-9]+", "-", topic.lower()).strip("-")[:42] or "topic"
+    deck = ROOT / "output" / "telegram" / f"{slug}-{digest}" / "deck.pptx"
+    deck.parent.mkdir(parents=True, exist_ok=True)
+    build = subprocess.run(
+        ["node", str(ROOT / "pptxgen" / "scripts" / "build_deck.js"), str(plan), str(deck)],
+        cwd=str(ROOT), capture_output=True, text=True,
+        encoding="utf-8", errors="ignore", timeout=90,
+    )
+    built = _labelled_path((build.stdout or "") + "\n" + (build.stderr or ""), "PPTX:")
+    if built is None or not built.is_file():
+        log(f"pptxgen build failed rc={build.returncode}")
+        return None
+    log("pptxgen build ok")
+    return built
+
+
+def _build_legacy(topic: str) -> Path | None:
+    """Old deterministic python-pptx builder, kept only as a safety fallback."""
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "deck_from_text.py"), topic],
+        cwd=str(ROOT), capture_output=True, text=True,
+        encoding="utf-8", errors="ignore", timeout=150,
+    )
+    return _labelled_path((result.stdout or "") + "\n" + (result.stderr or ""), "DECK:")
+
+
 def run_agent(topic: str, chat_id: int | str, token: str) -> None:
-    """Build the deck deterministically, then deliver it. No model in the loop."""
-    command = [sys.executable, str(ROOT / "scripts" / "deck_from_text.py"), topic]
+    """Build the deck with PptxGenJS, deliver it, keep the old builder as fallback."""
     log(f"build start | chat={chat_id} | topic={topic[:60]!r}")
+    deck: Path | None = None
     try:
-        result = subprocess.run(
-            command, cwd=str(ROOT), capture_output=True, text=True,
-            encoding="utf-8", errors="ignore", timeout=150,
-        )
-        output = (result.stdout or "") + "\n" + (result.stderr or "")
+        deck = _build_pptxgen(topic)
+        if deck is None:
+            log("falling back to legacy builder")
+            deck = _build_legacy(topic)
     except subprocess.TimeoutExpired:
         log("build timed out")
         send_text(token, chat_id, "That topic took too long. Try a shorter one.")
         return
 
-    deck_line = next((line for line in output.splitlines() if line.startswith("DECK:")), "")
-    deck = Path(deck_line[5:].strip()) if deck_line else None
     if deck is None or not deck.is_file():
         log("build failed")
         send_text(token, chat_id, "Could not build that deck. Please try a simpler topic.")
