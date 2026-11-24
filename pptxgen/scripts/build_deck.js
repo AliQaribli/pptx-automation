@@ -15,6 +15,18 @@ const p = plan.palette || {
 };
 const FONT = plan.font || 'Aptos';
 const SW = 13.333, SH = 7.5, M = 0.7, CW = SW - 2 * M;
+const AZ = /[əğıçşöü]/i.test(`${plan.topic || ''} ${plan.title || ''}`);
+const T = {
+  scope: AZ ? 'MƏNBƏ VƏ ƏHATƏ DƏİRƏSİ' : 'Scope and sources',
+  builtFrom: AZ ? 'Bu slayd nədən hazırlanıb' : 'What this deck is built from',
+  yourTopic: AZ ? 'Sizin mövzunuz' : 'Your topic',
+  plain: AZ ? 'Sadə dil' : 'Plain language',
+  noFacts: AZ ? 'Uydurma fakt yoxdur' : 'No invented facts',
+  noFactsBody: AZ ? 'Xarici statistika, tarix, ad və sitat əlavə edilməyib.' : 'No outside statistics, dates, names or citations were added.',
+  editable: AZ
+    ? 'Redaktə olunan PowerPoint elementləri: mətn, fiqurlar, diaqram və dizayn.'
+    : 'Editable PowerPoint elements: text, shapes, process diagram and layouts.'
+};
 
 const pptx = new pptxgen();
 pptx.defineLayout({ name: 'WIDE', width: SW, height: SH });
@@ -23,8 +35,8 @@ pptx.author = plan.author || 'AI Presentation Pipeline';
 pptx.company = 'AI Presentation Pipeline';
 pptx.subject = plan.topic || plan.title;
 pptx.title = plan.title;
-pptx.lang = 'en-US';
-pptx.theme = { headFontFace: FONT, bodyFontFace: FONT, lang: 'en-US' };
+pptx.lang = AZ ? 'az-AZ' : 'en-US';
+pptx.theme = { headFontFace: FONT, bodyFontFace: FONT, lang: AZ ? 'az-AZ' : 'en-US' };
 
 function base(slide, num) {
   slide.background = { color: p.bg };
@@ -70,7 +82,9 @@ L.cover = (s, d) => {
 L.statement = (s, d) => {
   base(s, d.n); kicker(s, d.kicker || 'Key message');
   title(s, d.title, 1.05, 30, 10.8);
-  s.addText(d.stat, { x: M, y: 2.65, w: 5.2, h: 2.1, fontSize: 76, bold: true, color: p.accent, fontFace: FONT, fit: 'shrink' });
+  const statText = String(d.stat || '').trim();
+  const statSize = statText.length > 22 ? 30 : statText.length > 14 ? 40 : statText.length > 10 ? 54 : 76;
+  s.addText(statText, { x: M, y: 2.65, w: 5.2, h: 2.1, fontSize: statSize, bold: true, color: p.accent, fontFace: FONT, fit: 'shrink', margin: 0, breakLine: false });
   s.addText(d.statLabel || '', { x: M, y: 4.75, w: 5.2, h: 0.7, fontSize: 17, color: p.ink, fontFace: FONT, fit: 'shrink' });
   s.addShape(pptx.ShapeType.rect, { x: 6.25, y: 2.55, w: 0.03, h: 2.8, fill: { color: p.panel }, line: { color: p.panel, transparency: 100 } });
   bullets(s, d.bullets || [], 6.65, 2.6, 5.7, 2.7, 17);
@@ -107,7 +121,7 @@ L.compare = (s, d) => {
     s.addShape(pptx.ShapeType.rect, { x, y: startY, w: colW, h: 3.35, fill: { color: i === 1 ? p.panel : p.bg }, line: { color: i === 1 ? p.accent : p.panel, width: 1 } });
     s.addShape(pptx.ShapeType.rect, { x, y: startY, w: colW, h: 0.08, fill: { color: i === 1 ? p.accent2 : p.accent }, line: { color: i === 1 ? p.accent2 : p.accent, transparency: 100 } });
     s.addText(col.head, { x: x + 0.25, y: startY + 0.3, w: colW - 0.5, h: 0.65, fontSize: 20, bold: true, color: p.ink, fontFace: FONT, fit: 'shrink' });
-    bullets(s, col.items, x + 0.25, startY + 1.15, colW - 0.5, 1.9, 15);
+    bullets(s, col.items, x + 0.25, startY + 1.15, colW - 0.5, 1.9, 16);
   });
   if (d.citation) s.addText(d.citation, { x: M, y: 6.35, w: CW, h: 0.3, fontSize: 10, color: p.muted, fontFace: FONT });
   note(s, d.notes);
@@ -122,7 +136,7 @@ L.process = (s, d) => {
     s.addShape(pptx.ShapeType.ellipse, { x: x + 1.05, y: y - 0.55, w: 0.65, h: 0.65, fill: { color: p.accent }, line: { color: p.accent, transparency: 100 } });
     s.addText(String(i + 1), { x: x + 1.05, y: y - 0.44, w: 0.65, h: 0.35, fontSize: 13, bold: true, color: 'FFFFFF', align: 'center', fontFace: FONT });
     s.addText(st.head, { x, y: y + 0.35, w: stepW, h: 0.7, fontSize: 17, bold: true, color: p.ink, align: 'center', fontFace: FONT, fit: 'shrink' });
-    s.addText(st.body || '', { x, y: y + 1.15, w: stepW, h: 1.5, fontSize: 13, color: p.muted, align: 'center', fontFace: FONT, fit: 'shrink' });
+    s.addText(st.body || '', { x, y: y + 1.15, w: stepW, h: 1.6, fontSize: 15, color: p.ink, align: 'center', fontFace: FONT, fit: 'shrink', paraSpaceAfterPt: 4 });
     if (i < d.steps.length - 1) s.addShape(pptx.ShapeType.rect, { x: x + stepW + 0.06, y: y - 0.2, w: 0.24, h: 0.03, fill: { color: p.accent2 }, line: { color: p.accent2, transparency: 100 } });
   });
   if (d.citation) s.addText(d.citation, { x: M, y: 6.35, w: CW, h: 0.3, fontSize: 10, color: p.muted, fontFace: FONT });
@@ -148,20 +162,23 @@ L.summary = (s, d) => {
 };
 
 L.sources = (s, d) => {
-  base(s, d.n); kicker(s, 'Sources');
-  title(s, 'Sources', 1.05, 30, 6);
-  const rows = (plan.sources || []).map((src, i) => ({
-    text: `[${src.id}] ${src.title}\n${src.url}`,
-    options: { bullet: { type: 'bullet' }, breakLine: i < plan.sources.length - 1, fontSize: 13, color: p.ink, paraSpaceAfterPt: 12, fontFace: FONT }
-  }));
-  if (rows.length) {
-    s.addText(rows, { x: M, y: 2.1, w: CW, h: 3.6, valign: 'top', fit: 'shrink' });
-  } else {
-    s.addText('No external facts were added to this deck. It is a topic-only starter generated from your prompt.', {
-      x: M, y: 2.2, w: CW, h: 1.2, fontSize: 18, color: p.ink, fontFace: FONT, fit: 'shrink'
-    });
-  }
-  s.addText('Editable PowerPoint elements: text, shapes, process diagram and layouts.', { x: M, y: 6.15, w: CW, h: 0.4, fontSize: 10, italic: true, color: p.muted, fontFace: FONT });
+  base(s, d.n); kicker(s, T.scope);
+  title(s, T.builtFrom, 1.05, 30, 11.4);
+  const cards = [
+    { head: T.yourTopic, body: plan.topic || plan.title },
+    { head: T.plain, body: plan.subtitle || (AZ ? 'Aydın və başa düşülməli şəkildə yazılıb.' : 'Written to be clear and easy to follow.') },
+    { head: T.noFacts, body: T.noFactsBody }
+  ];
+  const cardW = 3.85, gap = 0.3;
+  cards.forEach((c, i) => {
+    const x = M + i * (cardW + gap);
+    s.addShape(pptx.ShapeType.rect, { x, y: 2.25, w: cardW, h: 2.9, fill: { color: i === 1 ? p.panel : p.bg }, line: { color: i === 1 ? p.accent : p.panel, width: 1 } });
+    s.addShape(pptx.ShapeType.rect, { x, y: 2.25, w: cardW, h: 0.08, fill: { color: p.accent2 }, line: { color: p.accent2, transparency: 100 } });
+    s.addText(c.head, { x: x + 0.25, y: 2.6, w: cardW - 0.5, h: 0.5, fontSize: 19, bold: true, color: p.accent, fontFace: FONT });
+    s.addText(c.body, { x: x + 0.25, y: 3.25, w: cardW - 0.5, h: 1.55, fontSize: 15, color: p.ink, fontFace: FONT, fit: 'shrink' });
+  });
+  s.addText(T.editable, { x: M, y: 5.65, w: CW, h: 0.4, fontSize: 12, italic: true, color: p.muted, fontFace: FONT });
+  note(s, d.notes);
 };
 
 plan.slides.forEach((d, i) => {

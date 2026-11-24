@@ -2,9 +2,9 @@
 
 Turn one short Telegram message into a beautiful, editable presentation — delivered back into the same chat.
 
-`Beautiful Deck Agent` is a Hermes agent that reads a plain-text topic, builds a deterministic slide plan, renders the deck locally with **PptxGenJS** into real editable PowerPoint elements, and sends the finished file to the requester. It is built for a phone-first workflow: send a topic from Telegram, get an editable deck back, no laptop required. Canva is intentionally out of the critical path.
+`Beautiful Deck Agent` is a Hermes agent that reads a plain-text topic, writes topic-specific slide content with a model planner, renders the deck locally with **PptxGenJS** into real editable PowerPoint elements, and sends the finished file to the requester. It is built for a phone-first workflow: send a topic from Telegram, get an editable deck back, no laptop required. Canva is intentionally out of the critical path.
 
-> **Status:** end-to-end pipeline verified on 2026-11-24 — a Telegram topic becomes an editable `.pptx` and is delivered back as a file. Canva is no longer in the pipeline. The deck bot now builds with the local PptxGenJS pipeline (deterministic topic → plan → editable PPTX), with the older python-pptx builder kept only as a safety fallback. See [competition report](docs/competition_report.md), [limitations](docs/limitations.md) and [PptxGenJS pipeline](pptxgen/README.md).
+> **Status:** end-to-end pipeline verified on 2026-11-24 — a Telegram topic becomes an editable `.pptx` and is delivered back as a file. The deck bot now uses a model planner for content (`llm_topic_to_plan.py`, default free tier) with a deterministic planner as fallback, then PptxGenJS for rendering. The older python-pptx builder is kept only as a last-resort safety fallback. See [competition report](docs/competition_report.md), [limitations](docs/limitations.md) and [PptxGenJS pipeline](pptxgen/README.md).
 
 **Repository:** https://github.com/AliQaribli/pptx-automation.git — pushed on 2026-11-24, branch `main`. Latest commit is recorded in `docs/competition_report.md`.
 
@@ -12,7 +12,7 @@ Turn one short Telegram message into a beautiful, editable presentation — deli
 
 - Accepts a one-line brief in a Telegram DM (topic, audience, slide count, tone).
 - Applies a strict design contract — 16:9, 5–10 slides, conclusion-style titles, a fixed palette and grid, and a sources/credits slide — so output is consistent and editable ([design contract](docs/design_contract.md)).
-- Builds the deck with **Tool 1: Canva MCP** (generate → materialize → export), or falls back to **Tool 2: local PPTX engine** (`python-pptx`, offline, deterministic) when Canva is blocked, rate-limited, or returns `license_required` ([Canva MCP](docs/canva_mcp.md), [PPTX fallback](docs/pptx_fallback.md)).
+- Writes topic-specific slide content with a strict JSON planner (model first, deterministic fallback), then builds the deck with **PptxGenJS** into editable native PowerPoint text and shapes. Canva MCP is not used ([PptxGenJS pipeline](pptxgen/README.md)).
 - Sources free, properly credited imagery and records attribution on a credits slide ([image sourcing](docs/image_sourcing.md)).
 - Delivers the `.pptx` back into the same chat as an editable document, plus a short, honest note if a fallback was used ([architecture](docs/architecture.md)).
 - Lets you change the driving model from Telegram with a single slash command, with a free-by-default setup ([model switching](docs/model_switching.md)).

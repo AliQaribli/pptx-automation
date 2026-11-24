@@ -1,13 +1,14 @@
 """Deck-only Telegram bot.
 
 Listens on a dedicated bot token, accepts only presentation topics, and ignores
-or rejects everything else. Each topic runs a headless Hermes turn in the
-isolated `deckbot` profile, then the finished file is delivered to Telegram.
+or rejects everything else. Each topic is planned by a Hermes model call, rendered locally with PptxGenJS,
+and delivered back to Telegram. Deterministic planners are the safety fallback.
 
 The token is read from C:\\Users\\Ali\\.deckbot\\token.txt and is never printed.
 """
 from __future__ import annotations
 
+import hashlib
 import re
 import subprocess
 import sys
@@ -115,19 +116,33 @@ def _labelled_path(output: str, label: str) -> Path | None:
 
 
 def _build_pptxgen(topic: str) -> Path | None:
-    """Build with the PptxGenJS pipeline. Returns the deck path, or None."""
-    plan_result = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "topic_to_plan.py"), topic],
-        cwd=str(ROOT), capture_output=True, text=True,
-        encoding="utf-8", errors="ignore", timeout=60,
-    )
-    plan = _labelled_path((plan_result.stdout or "") + "\n" + (plan_result.stderr or ""), "PLAN:")
-    if plan is None or not plan.is_file():
-        log(f"pptxgen plan failed rc={plan_result.returncode}")
-        return None
-
-    digest = plan.stem.rsplit("-", 1)[-1]
+    """Build with PptxGenJS. Model planner first, deterministic planner as fallback."""
     slug = re.sub(r"[^a-z0-9]+", "-", topic.lower()).strip("-")[:42] or "topic"
+    digest = hashlib.sha256(topic.encode("utf-8")).hexdigest()[:8]
+    plan = ROOT / "output" / "telegram" / "plans" / f"{slug}-{digest}.json"
+    plan.parent.mkdir(parents=True, exist_ok=True)
+
+    llm = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "llm_topic_to_plan.py"), topic, str(plan)],
+        cwd=str(ROOT), capture_output=True, text=True,
+        encoding="utf-8", errors="ignore", timeout=180,
+    )
+    if llm.returncode != 0 or not plan.is_file():
+        log("model planner failed; using deterministic planner")
+        fallback = subprocess.run(
+            [sys.executable, str(ROOT / "scripts" / "topic_to_plan.py"), topic],
+            cwd=str(ROOT), capture_output=True, text=True,
+            encoding="utf-8", errors="ignore", timeout=60,
+        )
+        plan = _labelled_path(
+            (fallback.stdout or "") + "\n" + (fallback.stderr or ""), "PLAN:"
+        )
+        if plan is None or not plan.is_file():
+            log(f"pptxgen plan failed rc={fallback.returncode}")
+            return None
+    else:
+        log("model planner ok")
+
     deck = ROOT / "output" / "telegram" / f"{slug}-{digest}" / "deck.pptx"
     deck.parent.mkdir(parents=True, exist_ok=True)
     build = subprocess.run(

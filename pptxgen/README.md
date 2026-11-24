@@ -34,11 +34,12 @@ Then inspect `contact_sheet.png` with a vision-capable model, fix the affected s
 
 `scripts/deck_bot.py` now builds every Telegram deck through this pipeline:
 
-1. `python scripts/topic_to_plan.py "<topic>"` → `PLAN:<path>`
-2. `node pptxgen/scripts/build_deck.js <plan> <deck.pptx>` → `PPTX:<path>`
-3. Existing Telegram `sendDocument` delivery.
+1. `python scripts/llm_topic_to_plan.py "<topic>" <plan.json>` → `PLAN:<path>` (model writes topic-specific content in the user's language; safe schema + deterministic base).
+2. If step 1 fails, `python scripts/topic_to_plan.py "<topic>"` → `PLAN:<path>` (offline fallback).
+3. `node pptxgen/scripts/build_deck.js <plan> <deck.pptx>` → `PPTX:<path>`
+4. Existing Telegram `sendDocument` delivery.
 
-`topic_to_plan.py` is deterministic and offline: it adds no external facts and no model call. The older `deck_from_text.py` remains only as a safety fallback if either step fails. Canva is not called anywhere in this path.
+`llm_topic_to_plan.py` uses the Hermes CLI with the `free` tier by default (`DECK_PLAN_MODEL` overrides it) and writes no external facts. `topic_to_plan.py` is deterministic and offline. The older `deck_from_text.py` remains only as a last-resort safety fallback. Canva is not called anywhere in this path.
 
 ## Renderer note
 
