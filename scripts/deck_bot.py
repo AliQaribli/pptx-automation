@@ -16,10 +16,14 @@ from datetime import datetime
 from pathlib import Path
 
 import requests
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 ROOT = Path(r"C:\Users\Ali\presentation-agent")
 TOKEN_FILE = Path(r"C:\Users\Ali\.deckbot\token.txt")
 API = "https://api.telegram.org"
+FALLBACK_IP = "149.154.167.99"
 PROFILE = "deckbot"
 PROMPT_PREFIX = "Make a short informative deck about "
 REJECT = "Deck bot only — send a topic."
@@ -37,17 +41,43 @@ def load_token() -> str:
     return TOKEN_FILE.read_text(encoding="utf-8", errors="ignore").strip()
 
 
-def api_get(token: str, method: str, params: dict, timeout: int = 20) -> dict:
-    response = requests.get(f"{API}/bot{token}/{method}", params=params, timeout=timeout)
-    return response.json()
+def _call(token: str, method: str, *, post: bool, payload: dict, files: dict | None = None) -> dict:
+    """Call Telegram API, retrying via a known IP if DNS/route fails."""
+    endpoints = [
+        f"{API}/bot{token}/{method}",
+        f"https://{FALLBACK_IP}/bot{token}/{method}",
+    ]
+    last_error: Exception | None = None
+    for index, url in enumerate(endpoints):
+        kwargs: dict = {"timeout": 90 if files else 20}
+        if index == 1:
+            kwargs["headers"] = {"Host": "api.telegram.org"}
+            kwargs["verify"] = False
+        if files:
+            kwargs.update({"data": payload, "files": files})
+        elif post:
+            kwargs["json"] = payload
+        else:
+            kwargs["params"] = payload
+        try:
+            response = requests.post(url, **kwargs) if post or files else requests.get(url, **kwargs)
+            data = response.json()
+            if data.get("ok") or data.get("error_code", 0) >= 400:
+                return data
+            return data
+        except Exception as exc:
+            last_error = exc
+            continue
+    log(f"telegram call failed: {type(last_error).__name__}")
+    return {"ok": False}
+
+
+def api_get(token: str, method: str, params: dict) -> dict:
+    return _call(token, method, post=False, payload=params)
 
 
 def api_post(token: str, method: str, data: dict, files: dict | None = None) -> dict:
-    kwargs = {"data": data, "timeout": 90}
-    if files:
-        kwargs["files"] = files
-    response = requests.post(f"{API}/bot{token}/{method}", **kwargs)
-    return response.json()
+    return _call(token, method, post=True, payload=data, files=files)
 
 
 def send_text(token: str, chat_id: int | str, text: str) -> None:

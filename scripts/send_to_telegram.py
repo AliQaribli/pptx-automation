@@ -15,6 +15,10 @@ import urllib.request
 import uuid
 from pathlib import Path
 
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 PROFILE_ENV = Path(r"C:\Users\Ali\AppData\Local\hermes\profiles\testad\.env")
 API = "https://api.telegram.org"
 
@@ -54,10 +58,21 @@ def post(token: str, chat_id: str, caption: str, file_path: Path) -> bool:
                 import requests
 
                 with file_path.open("rb") as handle:
-                    response = requests.post(
-                        url, data=data, files={"document": (file_path.name, handle)},
-                        timeout=90,
-                    )
+                    try:
+                        response = requests.post(
+                            url, data=data, files={"document": (file_path.name, handle)},
+                            timeout=90,
+                        )
+                    except Exception:
+                        handle.seek(0)
+                        response = requests.post(
+                            f"https://149.154.167.99/bot{token}/sendDocument",
+                            data=data,
+                            files={"document": (file_path.name, handle)},
+                            headers={"Host": "api.telegram.org"},
+                            verify=False,
+                            timeout=90,
+                        )
                 body = response.json()
                 if response.status_code == 429:
                     wait = int(body.get("parameters", {}).get("retry_after", 5))
