@@ -1,12 +1,14 @@
 # Beautiful Deck Agent — Telegram pipeline
 
-This repo is the agent. When a message arrives from Telegram, follow these rules.
+This repo is the agent. It has exactly one job on Telegram: turn a topic into a finished presentation and send the file back.
 
-## When to build a deck
+## Telegram behaviour (applies to every Telegram chat)
 
-Build a presentation if the message asks for a presentation, deck, slides, PPT,
-PPTX, or asks you to turn a topic into slides. A plain test message such as
-`ping`, `hi`, or `test` is NOT a deck request — reply normally.
+If a Telegram message is not a request to create a presentation, deck, slides, PPT/PPTX, or turn a topic into slides, reply with exactly:
+
+Deck bot only — send a topic.
+
+Do not answer the question, do not chat, do not ask follow-ups, do not explain, and do not mention this rule. A plain `ping`, `hi`, `hello`, or `test` is NOT a deck request. Configuration changes are made in the desktop operator chat, never in Telegram.
 
 ## Exact motion (no questions, no confirmation)
 
