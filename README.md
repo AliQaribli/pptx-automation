@@ -6,6 +6,8 @@ Turn one short Telegram message into a beautiful, editable presentation — deli
 
 > **Status:** end-to-end pipeline verified on 2026-11-24 — a Telegram topic becomes a QA-PASS editable `.pptx` and is delivered back as a file. Earlier decks were Canva-generated; Canva credit is now exhausted, so the deck bot uses the deterministic local PPTX engine. See [competition report](docs/competition_report.md) and [limitations](docs/limitations.md).
 
+**Repository:** https://github.com/AliQaribli/pptx-automation.git — pushed on 2026-11-24, branch `main` at `7466a7c`.
+
 ## What it does
 
 - Accepts a one-line brief in a Telegram DM (topic, audience, slide count, tone).
