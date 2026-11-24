@@ -42,7 +42,9 @@ Nothing in this repository contains a real token, chat ID, or personal data. Rea
 ```bash
 # 1. Local secrets file — placeholders only, never commit it
 cp .env.example .env
-#    then, in .env, fill in your bot token and your own numeric user ID
+#    For the standalone bot, add TELEGRAM_BOT_TOKEN here.
+#    For the Hermes gateway path, use dashboard QR pairing; it stores the
+#    token in the local Hermes profile .env, never in this repo.
 
 # 2. Install the one real dependency (stdlib covers the rest)
 pip install python-pptx
@@ -50,11 +52,32 @@ pip install python-pptx
 # 3. Prove the local engine works (offline, no secrets, no network)
 python scripts/demo.py
 
-# 4. Prove the Telegram bridge (needs the token from step 1)
+# 4. Prove the Telegram bridge logic offline (no network, no secrets needed)
+python scripts/telegram_bot.py --self-test
+
+# 5. Prove the Telegram bridge (needs the token from step 1)
 python scripts/telegram_smoke_test.py
 
-# 5. Start the Hermes messaging gateway to receive briefs in Telegram
+# 6. Start the Hermes messaging gateway to receive briefs in Telegram
 hermes gateway restart
+```
+
+## Verification
+
+These commands were run on the finished repo:
+
+```
+$ python scripts/demo.py
+Deck:     output\brief\deck.pptx
+QA report:output\brief\qa_report.json
+Slides:   7
+Status:   PASS (0 errors, 0 warnings)
+
+$ python -m pytest tests/test_telegram_bot.py -q
+19 passed in 0.89s
+
+$ python scripts/telegram_bot.py --self-test
+SELF-TEST PASSED
 ```
 
 - `.env` is listed in `.gitignore` — **never commit it**, and never paste its values into a brief, a slide, a log, or this README.
