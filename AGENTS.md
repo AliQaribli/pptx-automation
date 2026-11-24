@@ -23,9 +23,12 @@ PPTX, or asks you to turn a topic into slides. A plain test message such as
    `python C:\Users\Ali\presentation-agent\scripts\deck_from_text.py "<the user's topic>"`
    It prints one line: `DECK:<absolute path>`.
 4. Reply with ONE short sentence saying the deck is ready, then put the file
-   directive on its own line:
+   directive as the VERY LAST line:
    `MEDIA:<absolute path to the .pptx or .pdf>`
    Use exactly one MEDIA line. The gateway turns it into a Telegram file.
+   Even if you run out of tool calls or hit an iteration limit, you MUST still
+   print the MEDIA line. Once the file exists on disk, stop calling tools and
+   reply immediately — do not spend turns re-verifying it.
 5. Keep the whole reply under 200 characters. Do not include bullet lists,
    caveats, credential talk, chat IDs, emails, or questions.
 
