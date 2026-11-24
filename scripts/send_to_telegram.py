@@ -110,7 +110,7 @@ def main() -> int:
 
     values = load_env(PROFILE_ENV)
     token = os.environ.get("TELEGRAM_BOT_TOKEN") or values.get("TELEGRAM_BOT_TOKEN", "")
-    chat_id = values.get("TELEGRAM_DELIVERY_CHAT_ID", "")
+    chat_id = os.environ.get("TELEGRAM_DELIVERY_CHAT_ID") or values.get("TELEGRAM_DELIVERY_CHAT_ID", "")
     if not token or not chat_id:
         print("ERROR: local Telegram delivery config missing", file=sys.stderr)
         return 3
