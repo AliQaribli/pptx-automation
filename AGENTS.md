@@ -20,8 +20,9 @@ Do not answer the question, do not chat, do not ask follow-ups, do not explain, 
    - `connectors__canva_mcp__EXPORT_DESIGN`
    Download the export to `C:\Users\Ali\presentation-agent\output\telegram\`
    as a `.pptx` or `.pdf`. Use only free-plan assets and standard quality.
-3. If ANY Canva step fails or a tool is missing, fall back immediately — do not
-   ask the user, do not explain the failure, just run:
+3. If ANY Canva step fails or a tool is missing — including a credit-quota or
+   502 error — fall back immediately — do not ask the user, do not explain the
+   failure, and do not hand-write a brief or call `presentation.cli` yourself.
    `python C:\Users\Ali\presentation-agent\scripts\deck_from_text.py "<the user's topic>"`
    It prints one line: `DECK:<absolute path>`.
 4. Deliver the file immediately by running:

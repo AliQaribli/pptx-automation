@@ -8,7 +8,6 @@ The token is read from C:\\Users\\Ali\\.deckbot\\token.txt and is never printed.
 """
 from __future__ import annotations
 
-import os
 import subprocess
 import sys
 import time
@@ -24,10 +23,9 @@ ROOT = Path(r"C:\Users\Ali\presentation-agent")
 TOKEN_FILE = Path(r"C:\Users\Ali\.deckbot\token.txt")
 API = "https://api.telegram.org"
 FALLBACK_IP = "149.154.167.99"
-PROFILE = "deckbot"
-PROMPT_PREFIX = "Make a short informative deck about "
 REJECT = "Deck bot only — send a topic."
 START = "Send a topic and I will make a 5-slide deck and send it back."
+GREETINGS = {"hi", "hey", "hello", "ping", "test", "how are you", "how r u"}
 
 
 def log(message: str) -> None:
@@ -106,41 +104,35 @@ def newest_deck() -> Path | None:
 
 
 def run_agent(topic: str, chat_id: int | str, token: str) -> None:
-    env = os.environ.copy()
-    env["TELEGRAM_BOT_TOKEN"] = token
-    env["TELEGRAM_DELIVERY_CHAT_ID"] = str(chat_id)
-    command = [
-        "hermes", "-p", PROFILE, "chat",
-        "-q", PROMPT_PREFIX + topic,
-        "--oneshot", "--yolo", "--max-turns", "18",
-    ]
-    log(f"agent start | chat={chat_id} | topic={topic[:60]!r}")
+    """Build the deck deterministically, then deliver it. No model in the loop."""
+    command = [sys.executable, str(ROOT / "scripts" / "deck_from_text.py"), topic]
+    log(f"build start | chat={chat_id} | topic={topic[:60]!r}")
     try:
         result = subprocess.run(
-            command,
-            cwd=str(ROOT),
-            env=env,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="ignore",
-            timeout=300,
+            command, cwd=str(ROOT), capture_output=True, text=True,
+            encoding="utf-8", errors="ignore", timeout=150,
         )
         output = (result.stdout or "") + "\n" + (result.stderr or "")
     except subprocess.TimeoutExpired:
-        output = ""
-        log("agent timed out")
-
-    if "SENT:" in output:
-        log("agent delivered the deck")
+        log("build timed out")
+        send_text(token, chat_id, "That topic took too long. Try a shorter one.")
         return
 
-    deck = newest_deck()
-    if deck and send_file(token, chat_id, deck, "Your deck is ready."):
-        log("fallback delivery succeeded")
-    else:
-        log("delivery failed — no file sent")
+    deck_line = next((line for line in output.splitlines() if line.startswith("DECK:")), "")
+    deck = Path(deck_line[5:].strip()) if deck_line else None
+    if deck is None or not deck.is_file():
+        log("build failed")
         send_text(token, chat_id, "Could not build that deck. Please try a simpler topic.")
+        return
+
+    log(f"build ok | {deck.name}")
+    for attempt in range(2):
+        if send_file(token, chat_id, deck, "Your deck is ready."):
+            log("delivery succeeded")
+            return
+        log(f"delivery attempt {attempt + 1} failed")
+        time.sleep(3)
+    send_text(token, chat_id, "Deck built, but delivery failed. Please try again.")
 
 
 def main() -> int:
@@ -164,9 +156,9 @@ def main() -> int:
                 if text == "/start":
                     send_text(token, chat_id, START)
                     log(f"start | chat={chat_id}")
-                elif text.startswith("/"):
+                elif text.startswith("/") or text.lower().strip("!.") in GREETINGS or text.lower().startswith("how are you"):
                     send_text(token, chat_id, REJECT)
-                    log(f"rejected command | chat={chat_id}")
+                    log(f"rejected | chat={chat_id} | {text[:40]!r}")
                 else:
                     send_text(token, chat_id, "Working on your deck…")
                     run_agent(text, chat_id, token)
