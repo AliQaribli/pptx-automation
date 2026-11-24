@@ -49,6 +49,8 @@ If you log into Canva with a **different account**, these designs will not appea
 
 **Important current limitation:** at 15:47 on 2026-11-24 `GENERATE_DESIGN` began returning `User has exceeded their credit quota`. From that point the deck bot uses the local PPTX engine for every topic. The decks delivered after that point were **not** Canva-generated; they are editable local PPTX files with labelled image slots. This is a deliberate, reliable fallback, not a claim of live Canva use.
 
+At 17:38 the connector was switched to the user's own Canva account (active label `canva_mcp_batty-unknow`) and a fresh 5-slide generation test was run. Canva replied: `Design generation is not enabled in your team`. So neither connected account can currently generate designs through Canva MCP — one is out of credit, the other has the feature disabled at team level. No premium-only export settings were reachable.
+
 ## Model switching: how performance changes
 
 The operator pipeline scripts are model-independent. Switching models changes only the reasoning/tool-calling “brain” in the **operator** chat. The deck-only bot deliberately does **not** call a model: it runs `deck_from_text.py` directly, so a slow or wandering model can never break delivery.
