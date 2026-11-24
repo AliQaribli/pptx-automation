@@ -46,7 +46,7 @@ Turn a free-form brief into a finished, editable deck. Normalize the brief into 
 
 5. **Source images with credits.** Use order Openverse → Wikimedia Commons → Pollinations.ai. Prefer `CC0`/`pdm`/`BY`/`BY-SA`; skip `NC`/`ND`. Record one metadata record per image (author, licence, licence_url, source_page_url, attribution) and generate both the final `sources` slide and `credits.json` from it. Never put sensitive terms in queries/prompts; never embed credentials. Completion: every used image is credited and the credits slide is last.
 
-6. **Verify and deliver.** On the Telegram path, verify ONLY that the downloaded file exists and has a `.pptx`/`.pdf` extension. Do NOT render slides to images, do NOT call vision_analyze, and do NOT re-open the deck with python-pptx. Reply immediately with one short sentence and the `MEDIA:<absolute path>` line as the last line. Completion: the file is handed to the gateway for Telegram delivery.
+6. **Verify and deliver.** On the Telegram path, verify ONLY that the downloaded file exists and has a `.pptx`/`.pdf` extension. Do NOT render slides to images, do NOT call vision_analyze, and do NOT re-open the deck with python-pptx. Deliver by running `python C:\Users\Ali\presentation-agent\scripts\send_to_telegram.py --caption "Your deck is ready." "<absolute path>"`, then reply with one short sentence. Completion: the file is delivered directly to Telegram without relying on MEDIA interception.
 
 ## Pitfalls
 
